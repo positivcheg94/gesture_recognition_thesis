@@ -1,0 +1,9 @@
+librealsense/
+skin-detect/
+.ipynb_checkpoints/
+.idea/
+
+
+
+*.jpg
+*.ipynb
