@@ -5,9 +5,9 @@
 #include <librealsense/rs.hpp>
 
 
-#undef DEBUG
+#define DEBUG
 
-#define DIST_DEBUG
+#undef DIST_DEBUG
 
 rs::device *dev = nullptr;
 
@@ -104,10 +104,10 @@ public:
 
             dev = ctx.get_device(0);
 
-            dev->set_option(rs::option::f200_laser_power, 16);
-            dev->set_option(rs::option::f200_motion_range, 7);
+            dev->set_option(rs::option::f200_laser_power, 15);
+            dev->set_option(rs::option::f200_motion_range, 0);
             dev->set_option(rs::option::f200_confidence_threshold, 15);
-            dev->set_option(rs::option::f200_filter_option, 1);
+            dev->set_option(rs::option::f200_filter_option, 6);
             dev->set_option(rs::option::f200_accuracy, 3);
 
             dev->enable_stream(rs::stream::depth, width, height, rs::format::z16, 30);
@@ -117,6 +117,7 @@ public:
             while (true) {
                 dev->wait_for_frames();
 #ifdef DEBUG
+                std::chrono::duration<double> duration;
                 std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
                 cv::Mat depth_frame(height, width, CV_16UC1,
@@ -124,7 +125,8 @@ public:
                 cv::Mat color_frame(height, width, CV_8UC3,
                                     const_cast<void *>(dev->get_frame_data(rs::stream::color)));
 #ifdef DEBUG
-                std::cout << "time elapsed for getting frames " << (std::chrono::system_clock::now() - start).count() << std::endl;
+                duration = std::chrono::system_clock::now() - start;
+                std::cout << "time elapsed for getting frames " << duration.count() << std::endl;
                 start = std::chrono::system_clock::now();
 #endif
                 cv::erode(depth_frame, depth_frame, struct_element);
@@ -139,7 +141,8 @@ public:
 
 
 #ifdef DEBUG
-                std::cout << "time elapsed for image processing frames " << (std::chrono::system_clock::now() - start).count() << std::endl;
+                duration = std::chrono::system_clock::now() - start;
+                std::cout << "time elapsed for image processing frames " << duration.count() << std::endl;
 #endif
 
                 cv::imshow(depth_window, depth_frame);

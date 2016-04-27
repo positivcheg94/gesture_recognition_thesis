@@ -3,6 +3,10 @@ import numpy as np
 
 from skimage import color
 
+def strange_map(f_sequence, *args):
+	for function in f_sequence:
+		yield function(*args)
+
 class NumChannelsMismatch:
 	pass
 
@@ -29,9 +33,40 @@ class ImageShow:
 
 	def show_image(self, image, separated=True):
 		if image.shape[2] != self._channels:
-			raise NumChannelsMismatch()
+			raise NumChannelsMismatch
 		for i in range(self._channels):
 			cv2.imshow(self._names_map[i],image[:,:,i])
+
+class ColorFilter:
+
+	def __init__(self,channels, mask_dtype = np.bool):
+		self._channels = channels
+		self._filter_sequence = set([])
+		self._mask_dtype = mask_dtype
+
+	def append_filter(self, color_filter):
+		if color_filter.__code__.co_argcount != self._channels:
+			raise NumChannelsMismatch
+		self._filter_sequence.add(color_filter)
+
+	def pop_filter(self, color_filter = None):
+		if color_filter:
+			try:
+				self._filter_sequence.remove(color_filter)
+			finally:
+				pass
+		else:
+			self._filter_sequence.pop()
+
+	def __call__(self, image):
+		if image.shape[2] != self._channels:
+			raise NumChannelsMismatch
+		mask = np.zeros(image.shape,dtype=self._mask_dtype)
+		plain_mask = filtered_image.reshape((-1,filtered_image.shape[-1]))
+		for i in range(len(plain_mask)):
+			plain_mask[i] = all(strange_map(self._filter_sequence,color))
+		return mask
+
 
 
 class image_processor:

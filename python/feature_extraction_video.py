@@ -12,13 +12,17 @@ while cap.isOpened():
 
 	gray= cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
 
-	sift = cv2.xfeatures2d.SIFT_create(contrastThreshold=0.08,edgeThreshold=10,sigma=1)
-	kp = sift.detect(gray,None)
+	detector = cv2.xfeatures2d.SURF_create(hessianThreshold=250, nOctaves=1, nOctaveLayers=5 , extended=True, upright=True)
 
-	cv2.drawKeypoints(frame,kp,frame,color=[255,0,0],flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+	kp = detector.detect(gray,None)
+
+	cv2.drawKeypoints(frame,kp,frame,color=[255,0,0]
+	#,flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+	)
 	cv2.imshow('default',frame)
 
-	if cv2.waitKey(1) & 0xFF == ord('q'):
+	k = cv2.waitKey(30) & 0xff
+	if k == 27:
 		break
 
 # When everything done, release the capture
