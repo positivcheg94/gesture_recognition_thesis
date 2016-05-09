@@ -1,9 +1,14 @@
-import numpy as np
+import sys
+
 import cv2
+import numpy as np
 
-cap = cv2.VideoCapture(0)
+if len(sys.argv)>0:
+	cap = cv2.VideoCapture(int(sys.argv[1]))
+else:
+	cap = cv2.VideoCapture(0)
 
-while (1):
+while (cap.isOpened()):
     ret, frame = cap.read()
     seg = cv2.ximgproc.segmentation.createGraphSegmentation()
     img = seg.processImage(frame)

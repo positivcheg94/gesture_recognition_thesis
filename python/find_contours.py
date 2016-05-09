@@ -1,9 +1,14 @@
-import numpy as np
+import sys
+
 import cv2
+import numpy as np
 
-cap = cv2.VideoCapture(0)
+if len(sys.argv)>0:
+	cap = cv2.VideoCapture(int(sys.argv[1]))
+else:
+	cap = cv2.VideoCapture(0)
 
-while (1):
+while (cap.isOpened()):
     ret, frame = cap.read()
 
     c_image = cv2.Canny(frame,threshold1=70,threshold2=200,apertureSize=3,L2gradient=False)

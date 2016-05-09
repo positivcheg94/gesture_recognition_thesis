@@ -91,7 +91,6 @@ class image_processor:
 		pass
 
 
-
 cap = cv2.VideoCapture(0)
 
 while cap.isOpened():

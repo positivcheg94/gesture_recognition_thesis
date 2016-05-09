@@ -1,5 +1,16 @@
-librealsense/
-skin-detect/
+#python
+__pycache__/
+*.py[cod]
+*$py.class
+
+#c++
+*.o
+*.obj
+*.exe
+*.out
+*.app
+
+docs/
 .ipynb_checkpoints/
 .idea/
 
@@ -7,3 +18,9 @@ skin-detect/
 *.ipynb
 
 .~lock*
+*.swp
+
+*.clr
+*.odt
+*.docx
+*.pdf

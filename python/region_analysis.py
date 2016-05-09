@@ -1,7 +1,12 @@
-import numpy as np
-import cv2
+import sys
 
-cap = cv2.VideoCapture(0)
+import cv2
+import numpy as np
+
+if len(sys.argv)>0:
+	cap = cv2.VideoCapture(int(sys.argv[1]))
+else:
+	cap = cv2.VideoCapture(0)
 
 mr = (270,370),(190,290),(255,255,255)
 
@@ -9,7 +14,7 @@ mr = (270,370),(190,290),(255,255,255)
 top_left_corner = (0,0),(100,100)
 top_right_corner = (540,0),(640,100)
 
-while True:
+while (cap.isOpened()):
     _,img = cap.read()
 
     region = img[mr[1][0]:mr[1][1],mr[0][0]:mr[0][1]]
