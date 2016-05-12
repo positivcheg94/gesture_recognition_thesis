@@ -11,11 +11,15 @@
 
 #include <experimental/filesystem>
 
-#include <boost/serialization/vector.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
 #include <opencv2/opencv.hpp>
+
+#include "continuous_matrix.hpp"
+
+typedef continuous_matrix<double> dmatrix;
+typedef continuous_matrix<size_t> umatrix;
 
 namespace fs = std::experimental::filesystem;
 
@@ -45,7 +49,7 @@ class BayesianResult{
 
     size_t first_dim;
     size_t second_dim;
-    std::vector<std::vector<double>> probs;
+    dmatrix probs;
 
     // used for serialization
     template<class Archive>
@@ -61,7 +65,7 @@ public:
     static BayesianResult load_from_file(std::ifstream & stream);
 
     BayesianResult(BayesianResult&&) = default;
-    BayesianResult(const size_t first,const size_t second, const std::vector<std::vector<size_t>> counts);
+    BayesianResult(const size_t first,const size_t second, const umatrix& counts);
     void save_to_file(std::ofstream & stream);
 
     cv::Mat representation();
@@ -73,14 +77,19 @@ public:
         auto o = out.begin<uint8_t>();
         for (; i != end; i++,o++) {
             const vec3b& pixel = *i;
-            if (probs[pixel[first]][pixel[second]] > threshold)
+            if (probs(pixel[first],pixel[second]) > threshold)
                 *o = gray_pixel::white;
             else
                 *o = gray_pixel::black;
         }
         return out;
-
     };
+
+
+    void blur(size_t ksize, double sigmax, double sigmay){
+        cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
+        cv::GaussianBlur(process,process,cv::Size(ksize,ksize),sigmax,sigmay);
+    }
 };
 
 class Bayesian{
@@ -88,7 +97,7 @@ class Bayesian{
 
     size_t first_dim;
     size_t second_dim;
-    std::vector<std::vector<size_t>> counts;
+    umatrix counts;
 
     Bayesian();
 
@@ -135,7 +144,7 @@ public:
             for (; i != end; i++, m++) {
                 vec3b &i_pixel = *i, m_pixel = *m;
                 if (m_pixel != rgb_pixel::white)
-                    counts[i_pixel[first]][i_pixel[second]]++;
+                    counts.increment(i_pixel[first],i_pixel[second]);
             }
         }
     };

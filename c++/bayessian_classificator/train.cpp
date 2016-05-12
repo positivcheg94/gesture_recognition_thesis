@@ -29,10 +29,12 @@ int main(int argc, char* argv[]) {
 
     auto bayesian_result = bayesian.make_result();
 
-    std::ofstream file(path_to_output_folder);
+    std::ofstream file(path_to_output_folder.string() + ".clr");
     bayesian_result.save_to_file(file);
-
+    bayesian_result.blur(5,1,1);
     cv::Mat color_map = bayesian_result.representation();
+    cv::imwrite(path_to_output_folder.string() + ".jpg",color_map);
+
     cv::imshow("color map",color_map);
     cv::waitKey(0);
 

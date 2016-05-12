@@ -1,27 +1,18 @@
 #include <iostream>
 
-template <uint first, uint second>
-void f(){
-    std::cout << first << std::endl;
-    std::cout << second << std::endl;
-};
-
-class A{
-public:
-    template <uint a, uint b>
-    void f();
-};
-
-template <uint a, uint b>
-void A::f()
-{
-    std::cout << a << std::endl;
-    std::cout << b << std::endl;
-}
-
+#include "continuous_matrix.hpp"
 
 int main(){
-    A a;
-    a.f<0,1>();
+    continuous_matrix<int,uint8_t> m(6,7);
+    size_t counter = 1;
+    for (auto j = m.begin(); j != m.end(); j++)
+        *j = counter++;
+
+    for (size_t i = 0; i < m.rows(); i++) {
+        for (size_t j = 0; j < m.cols(); j++) {
+            std::cout << m(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
     return 0;
 }
