@@ -80,125 +80,83 @@ void filter_color_image_by_depth(cv::Mat &color, cv::Mat &depth, uint16_t max_di
         }
 }
 
-class case_runner {
-public:
-    virtual int call() = 0;
-};
+int main() {
+    cv::namedWindow(depth_window, 1);
+    cv::namedWindow(color_window, 1);
 
-class default_case : public case_runner {
-public:
-    int call() {
-        cv::namedWindow(depth_window, 1);
-        cv::namedWindow(color_window, 1);
+    option_window::create();
 
-        option_window::create();
+    try {
+        rs::context ctx;
 
-        try {
-            rs::context ctx;
+        auto devices_count = ctx.get_device_count();
+        if (devices_count == 0) {
+            std::cout << "No devices found" << std::endl;
+            return -1;
+        }
 
-            auto devices_count = ctx.get_device_count();
-            if (devices_count == 0) {
-                std::cout << "No devices found" << std::endl;
-                return -1;
-            }
+        dev = ctx.get_device(0);
 
-            dev = ctx.get_device(0);
+        dev->set_option(rs::option::f200_laser_power, 15);
+        dev->set_option(rs::option::f200_motion_range, 50);
+        dev->set_option(rs::option::f200_confidence_threshold, 15);
+        dev->set_option(rs::option::f200_filter_option, 6);
+        dev->set_option(rs::option::f200_accuracy, 3);
 
-            dev->set_option(rs::option::f200_laser_power, 15);
-            dev->set_option(rs::option::f200_motion_range, 0);
-            dev->set_option(rs::option::f200_confidence_threshold, 15);
-            dev->set_option(rs::option::f200_filter_option, 6);
-            dev->set_option(rs::option::f200_accuracy, 3);
+        dev->enable_stream(rs::stream::depth, width, height, rs::format::z16, 30);
+        dev->enable_stream(rs::stream::color, width, height, rs::format::bgr8, 30);
+        dev->start();
 
-            dev->enable_stream(rs::stream::depth, width, height, rs::format::z16, 30);
-            dev->enable_stream(rs::stream::color, width, height, rs::format::bgr8, 30);
-            dev->start();
+        cv::Mat depth_frame;
+        cv::Mat color_frame;
 
-            while (true) {
-                dev->wait_for_frames();
+        while (true) {
+            dev->wait_for_frames();
 #ifdef DEBUG
-                std::chrono::duration<double> duration;
-                std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+            std::chrono::duration<double> duration;
+            std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
-                cv::Mat depth_frame(height, width, CV_16UC1,
-                                    const_cast<void *>(dev->get_frame_data(rs::stream::depth_aligned_to_color)));
-                cv::Mat color_frame(height, width, CV_8UC3,
-                                    const_cast<void *>(dev->get_frame_data(rs::stream::color)));
+            depth_frame = cv::Mat(height, width, CV_16UC1, const_cast<void *>(dev->get_frame_data(rs::stream::depth)));
+            //color_frame = cv::Mat(height, width, CV_8UC3, const_cast<void *>(dev->get_frame_data(rs::stream::color_aligned_to_depth)));
 #ifdef DEBUG
-                duration = std::chrono::system_clock::now() - start;
-                std::cout << "time elapsed for getting frames " << duration.count() << std::endl;
-                start = std::chrono::system_clock::now();
+            duration = std::chrono::system_clock::now() - start;
+            std::cout << "time elapsed for getting frames " << duration.count() << std::endl;
+            start = std::chrono::system_clock::now();
 #endif
-                cv::erode(depth_frame, depth_frame, struct_element);
-                cv::dilate(depth_frame, depth_frame, struct_element);
+            cv::erode(depth_frame, depth_frame, struct_element);
+            cv::dilate(depth_frame, depth_frame, struct_element);
 
 #ifdef DIST_DEBUG
-                auto minmax = find_min_max(depth_frame);
+            auto minmax = find_min_max(depth_frame);
                 std::cout << "min=" << minmax.first << " | max=" << minmax.second << std::endl;
 #endif
 
-                filter_color_image_by_depth(color_frame, depth_frame, options::current_distance);
+            //filter_color_image_by_depth(color_frame, depth_frame, options::current_distance);
 
 
 #ifdef DEBUG
-                duration = std::chrono::system_clock::now() - start;
-                std::cout << "time elapsed for image processing frames " << duration.count() << std::endl;
+            duration = std::chrono::system_clock::now() - start;
+            std::cout << "time elapsed for image processing frames " << duration.count() << std::endl;
 #endif
 
-                cv::imshow(depth_window, depth_frame);
-                cv::imshow(color_window, color_frame);
+            cv::imshow(depth_window, depth_frame);
+            //cv::imshow(color_window, color_frame);
 
 
-                // i'm rly mad cuz this function returns every run different codes just wtf O_O
-                int key = cv::waitKey(30) & 0xFF;
-                if (key == 27)
-                    break;
-                else if (key != 255)
-                    std::cout << key << std::endl;
+            // i'm rly mad cuz this function returns every run different codes just wtf O_O
+            int key = cv::waitKey(30) & 0xFF;
+            if (key == 27)
+                break;
+            else if (key != 255)
+                std::cout << key << std::endl;
 
-            }
-
-            dev->stop();
         }
-        catch (rs::error error) {
-            std::cout << error.what() << std::endl;
-            return -1;
-        }
-        return 0;
+
+        dev->stop();
     }
-};
-
-namespace kernel {
-    namespace edges {
-        cv::Mat d = (cv::Mat_<double>(3, 3) <<
-                     1, 0, -1,
-                0, 0, 0,
-                -1, 0, 1
-        );
-        cv::Mat hw = (cv::Mat_<double>(3, 3) <<
-                      0, 1, 0,
-                1, -4, 1,
-                0, 1, 0
-        );
-        cv::Mat dhw = (cv::Mat_<double>(3, 3) <<
-                       1, 1, 1,
-                1, -8, 1,
-                1, 1, 1
-        );
+    catch (rs::error error) {
+        std::cout << error.what() << std::endl;
+        return -1;
     }
-
-    cv::Mat sharpen = (cv::Mat_<double>(3, 3) <<
-                       0, -1, 0,
-            -1, 5, -1,
-            0, -1, 0
-    );
-
-}
-
-
-int main() {
-    case_runner *def_case = new default_case();
-    def_case->call();
-
     return 0;
 }
