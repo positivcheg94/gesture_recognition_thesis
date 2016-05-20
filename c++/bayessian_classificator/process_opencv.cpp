@@ -9,6 +9,9 @@
 
 namespace fs = std::experimental::filesystem;
 
+std::string color_window = "color";
+std::string classified_window = "color";
+
 int main(int argc, char* argv[]) {
     assert(argc>4);
 
@@ -20,18 +23,18 @@ int main(int argc, char* argv[]) {
     fs::path path_to_file(output_folder);
     path_to_file/=filename;
 
-    std::ifstream file(path_to_file.string()+".clr");
+    std::ifstream file(path_to_file.string());
 
-    BayesianResult b_res = std::move(BayesianResult::load_from_file(file));
+    BayesianModel b_m = std::move(BayesianModel::load_from_file(file));
 
 
     cv::VideoCapture cap(camera);
     cap.set(CV_CAP_PROP_FPS, 30);
 
 
-    cv::Mat frame;
+    cv::Mat color_frame;
     cv::Mat hsv_frame;
-    cv::Mat classified;
+    cv::Mat classified_frame;
     cv::Mat result;
     cv::Mat struct_element = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(10,10));
 
@@ -41,13 +44,13 @@ int main(int argc, char* argv[]) {
     std::chrono::duration<double> duration;
     while(cap.isOpened()){
         start_time = std::chrono::high_resolution_clock::now();
-        cap.read(frame);
-        cv::cvtColor(frame,hsv_frame,cv::COLOR_BGR2HSV);
+        cap >> color_frame;
+        cv::cvtColor(color_frame,hsv_frame,cv::COLOR_BGR2HSV);
         duration = std::chrono::high_resolution_clock::now() - start_time;
         std::cout << duration.count() << std::endl;
 
         start_time = std::chrono::high_resolution_clock::now();
-        classified = b_res.classify<0,1>(hsv_frame,treshold);
+        classified_frame = b_m.classify<0,1>(hsv_frame,treshold);
         duration = std::chrono::high_resolution_clock::now() - start_time;
         std::cout << duration.count() << std::endl<< std::endl<< std::endl;
 
@@ -59,8 +62,8 @@ int main(int argc, char* argv[]) {
         //cv::erode(result,result,struct_element);
         //cv::imshow("result",result);
 
-        cv::imshow("frame",frame);
-        cv::imshow("classified",classified);
+        cv::imshow(color_window,color_frame);
+        cv::imshow(classified_window,classified_frame);
 
         int key = cv::waitKey(1) & 0xFF;
         if (key == 27)

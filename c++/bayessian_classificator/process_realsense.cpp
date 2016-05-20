@@ -8,6 +8,7 @@ const uint16_t height = 480;
 const uint16_t width = 640;
 
 std::string color_window = "color";
+std::string classified_window = "color";
 
 auto struct_element = cv::getStructuringElement(cv::MorphShapes::MORPH_RECT, cv::Size(4, 4));
 
@@ -54,12 +55,21 @@ void filter_color_image_by_depth(cv::Mat &color, cv::Mat &depth, uint16_t max_di
 }
 
 int main(int argc, char* argv[]) {
-    assert(argc>1);
-    std::string file_name = argv[1];
+    assert(argc>3);
+
+    std::string output_folder = argv[1];
+    std::string filename = argv[2];
+    double treshold = std::stod(argv[3]);
+
+    fs::path path_to_file(output_folder);
+    path_to_file/=filename;
+
+    std::ifstream file(path_to_file.string());
+
+    BayesianModel b_m = std::move(BayesianModel::load_from_file(file));
 
     cv::namedWindow(color_window, 1);
-
-    Bayesian b(256,256);
+    cv::namedWindow(classified_window, 1);
 
     rs::device *dev = nullptr;
 
@@ -84,9 +94,9 @@ int main(int argc, char* argv[]) {
         dev->enable_stream(rs::stream::color, width, height, rs::format::bgr8, 30);
         dev->start();
 
-        cv::Mat depth_frame;
         cv::Mat color_frame;
         cv::Mat hsv_frame;
+        cv::Mat classified_frame;
 
         while (true) {
             dev->wait_for_frames();
@@ -94,34 +104,24 @@ int main(int argc, char* argv[]) {
             std::chrono::duration<double> duration;
             std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
-            depth_frame = cv::Mat(height, width, CV_16UC1, const_cast<void *>(dev->get_frame_data(rs::stream::depth)));
             color_frame = cv::Mat(height, width, CV_8UC3, const_cast<void *>(dev->get_frame_data(rs::stream::color_aligned_to_depth)));
 #ifdef DEBUG
             duration = std::chrono::system_clock::now() - start;
             std::cout << "time elapsed for getting frames " << duration.count() << std::endl;
             start = std::chrono::system_clock::now();
 #endif
-//            cv::erode(depth_frame, depth_frame, struct_element);
-//            cv::dilate(depth_frame, depth_frame, struct_element);
 
-#ifdef DIST_DEBUG
-            auto minmax = find_min_max(depth_frame);
-                std::cout << "min=" << minmax.first << " | max=" << minmax.second << std::endl;
-#endif
-
-            filter_color_image_by_depth(color_frame, depth_frame, 20000);
-
+            cv::cvtColor(color_frame,hsv_frame,cv::COLOR_BGR2HSV);
+            classified_frame = std::move(b_m.classify<0,1>(hsv_frame,treshold));
 
 #ifdef DEBUG
             duration = std::chrono::system_clock::now() - start;
-            std::cout << "time elapsed for image processing frames " << duration.count() << std::endl;
+            std::cout << "time elapsed for image processing " << duration.count() << std::endl;
 #endif
 
+
             cv::imshow(color_window, color_frame);
-
-            cv::cvtColor(color_frame,hsv_frame,cv::COLOR_BGR2HSV);
-
-            b.train_from_image<0,1>(hsv_frame,hsv_pixel::black);
+            cv::imshow(classified_window, classified_frame);
 
             // i'm rly mad cuz this function returns every run different codes just wtf O_O
             int key = cv::waitKey(30) & 0xFF;
@@ -131,9 +131,6 @@ int main(int argc, char* argv[]) {
                 std::cout << key << std::endl;
 
         }
-        auto b_model = b.model();
-        std::ofstream out(file_name);
-        b_model.save_to_file(out);
         dev->stop();
     }
     catch (rs::error error) {

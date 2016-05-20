@@ -25,12 +25,12 @@ int main(int argc, char* argv[]) {
 
     bayesian.train_from_folder<0,1>(path_to_train_folder);
 
-    auto bayesian_result = bayesian.make_result();
+    auto bayesian_m = bayesian.model();
 
-    std::ofstream file(path_to_output_folder.string() + ".clr");
-    bayesian_result.save_to_file(file);
-    bayesian_result.blur(5,1,1);
-    cv::Mat color_map = bayesian_result.representation();
+    std::ofstream file(path_to_output_folder.string());
+    bayesian_m.save_to_file(file);
+    bayesian_m.blur(5,1,1);
+    cv::Mat color_map = bayesian_m.representation();
     cv::imwrite(path_to_output_folder.string() + ".jpg",color_map);
 
     cv::imshow("color map",color_map);

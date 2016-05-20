@@ -12,10 +12,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 ${OPENCVLIBS} ${BOOSTLIBS} ${
 set(SOURCE_FILES
         continuous_matrix.cpp
         classificator.cpp
-        main.cpp
-        train.cpp
+        process_opencv.cpp
+        train_from_folder.cpp
         )
 
 
-add_executable(main main.cpp)
-add_executable(train train.cpp)
+add_executable(main process_opencv.cpp)
+add_executable(train train_from_folder.cpp)

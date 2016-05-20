@@ -19,7 +19,7 @@
 namespace fs = std::experimental::filesystem;
 
 
-class BayesianResult{
+class BayesianModel{
     friend boost::serialization::access;
 
     size_t first_dim;
@@ -34,13 +34,13 @@ class BayesianResult{
         ar & probs;
     }
 
-    BayesianResult();
+    BayesianModel();
 public:
 
-    static BayesianResult load_from_file(std::ifstream & stream);
+    static BayesianModel load_from_file(std::ifstream & stream);
 
-    BayesianResult(BayesianResult&&) = default;
-    BayesianResult(const size_t first,const size_t second, const umatrix& counts);
+    BayesianModel(BayesianModel&&) = default;
+    BayesianModel(const size_t first,const size_t second, const umatrix& counts);
     void save_to_file(std::ofstream & stream);
 
     cv::Mat representation();
@@ -134,7 +134,7 @@ public:
         }
     };
 
-    BayesianResult make_result();
+    BayesianModel model();
 };
 
 
