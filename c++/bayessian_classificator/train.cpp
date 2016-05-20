@@ -1,5 +1,4 @@
 #include <fstream>
-#include <cassert>
 #include <iostream>
 
 #include <experimental/filesystem>
@@ -8,7 +7,6 @@
 
 #include "classificator.hpp"
 
-#define file_name "trained.clr"
 
 namespace fs = std::experimental::filesystem;
 

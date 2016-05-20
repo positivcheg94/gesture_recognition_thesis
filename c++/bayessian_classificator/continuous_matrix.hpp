@@ -145,4 +145,7 @@ public:
 
 };
 
+typedef continuous_matrix<double> dmatrix;
+typedef continuous_matrix<size_t> umatrix;
+
 #endif //CONTINUOUS_MATRIX_HPP

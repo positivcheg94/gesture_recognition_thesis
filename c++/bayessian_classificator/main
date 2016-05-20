@@ -1,0 +1,2 @@
+#! /bin/bash
+./bin/main.app ./data trained2 $1 $2

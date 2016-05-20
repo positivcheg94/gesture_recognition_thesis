@@ -10,11 +10,12 @@
 namespace fs = std::experimental::filesystem;
 
 int main(int argc, char* argv[]) {
-    assert(argc>3);
+    assert(argc>4);
 
     std::string output_folder = argv[1];
     std::string filename = argv[2];
-    double treshold = std::stod(argv[3]);
+    size_t camera = std::stoll(argv[3]);
+    double treshold = std::stod(argv[4]);
 
     fs::path path_to_file(output_folder);
     path_to_file/=filename;
@@ -23,7 +24,11 @@ int main(int argc, char* argv[]) {
 
     BayesianResult b_res = std::move(BayesianResult::load_from_file(file));
 
-    cv::VideoCapture cap(0);
+
+    cv::VideoCapture cap(camera);
+    cap.set(CV_CAP_PROP_FPS, 30);
+
+
     cv::Mat frame;
     cv::Mat hsv_frame;
     cv::Mat classified;
@@ -32,10 +37,19 @@ int main(int argc, char* argv[]) {
 
     size_t n = 0;
     std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+    std::chrono::high_resolution_clock::time_point start_time;
+    std::chrono::duration<double> duration;
     while(cap.isOpened()){
+        start_time = std::chrono::high_resolution_clock::now();
         cap.read(frame);
         cv::cvtColor(frame,hsv_frame,cv::COLOR_BGR2HSV);
+        duration = std::chrono::high_resolution_clock::now() - start_time;
+        std::cout << duration.count() << std::endl;
+
+        start_time = std::chrono::high_resolution_clock::now();
         classified = b_res.classify<0,1>(hsv_frame,treshold);
+        duration = std::chrono::high_resolution_clock::now() - start_time;
+        std::cout << duration.count() << std::endl<< std::endl<< std::endl;
 
         //cv::GaussianBlur(classified,result,cv::Size(5,5),0.2,0.2);
         //cv::medianBlur(result,result,5);
@@ -48,12 +62,12 @@ int main(int argc, char* argv[]) {
         cv::imshow("frame",frame);
         cv::imshow("classified",classified);
 
-        int key = cv::waitKey(30) & 0xFF;
+        int key = cv::waitKey(1) & 0xFF;
         if (key == 27)
             break;
         n++;
     }
-    std::chrono::duration<double> duration = std::chrono::system_clock::now() - start;
+    duration = std::chrono::system_clock::now() - start;
     std::cout << "Average FPS " << n/duration.count() << std::endl;
 
     return 0;

@@ -16,6 +16,7 @@ const uint16_t height = 480;
 const uint16_t width = 640;
 
 std::string depth_window = "depth";
+std::string filtered_depth_window = "filtered_depth";
 std::string color_window = "color";
 
 auto struct_element = cv::getStructuringElement(cv::MorphShapes::MORPH_RECT, cv::Size(4, 4));
@@ -34,7 +35,7 @@ namespace option_window {
 
     void create() {
         cv::namedWindow(option_window::name, cv::WINDOW_NORMAL);
-        cv::createTrackbar(option_window::depth, option_window::name, nullptr, 20000, option_window::depth_update,
+        cv::createTrackbar(option_window::depth, option_window::name, nullptr, 30000, option_window::depth_update,
                            nullptr);
     }
 }
@@ -117,7 +118,7 @@ int main() {
             std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
             depth_frame = cv::Mat(height, width, CV_16UC1, const_cast<void *>(dev->get_frame_data(rs::stream::depth)));
-            //color_frame = cv::Mat(height, width, CV_8UC3, const_cast<void *>(dev->get_frame_data(rs::stream::color_aligned_to_depth)));
+            color_frame = cv::Mat(height, width, CV_8UC3, const_cast<void *>(dev->get_frame_data(rs::stream::color_aligned_to_depth)));
 #ifdef DEBUG
             duration = std::chrono::system_clock::now() - start;
             std::cout << "time elapsed for getting frames " << duration.count() << std::endl;
@@ -131,7 +132,7 @@ int main() {
                 std::cout << "min=" << minmax.first << " | max=" << minmax.second << std::endl;
 #endif
 
-            //filter_color_image_by_depth(color_frame, depth_frame, options::current_distance);
+            filter_color_image_by_depth(color_frame, depth_frame, options::current_distance);
 
 
 #ifdef DEBUG
@@ -140,7 +141,7 @@ int main() {
 #endif
 
             cv::imshow(depth_window, depth_frame);
-            //cv::imshow(color_window, color_frame);
+            cv::imshow(color_window, color_frame);
 
 
             // i'm rly mad cuz this function returns every run different codes just wtf O_O

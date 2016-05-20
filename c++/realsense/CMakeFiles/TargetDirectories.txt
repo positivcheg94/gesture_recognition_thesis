@@ -1,0 +1,3 @@
+/home/yang/programming/gesture_recognition_thesis/c++/realsense/CMakeFiles/rebuild_cache.dir
+/home/yang/programming/gesture_recognition_thesis/c++/realsense/CMakeFiles/edit_cache.dir
+/home/yang/programming/gesture_recognition_thesis/c++/realsense/CMakeFiles/first_try_realsense.dir

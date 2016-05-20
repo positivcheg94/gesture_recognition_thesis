@@ -4,44 +4,19 @@
 #include <vector>
 #include <algorithm>
 #include <string>
-#include <exception>
 #include <utility>
 #include <fstream>
-#include <iostream>
 
 #include <experimental/filesystem>
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
-#include <opencv2/opencv.hpp>
-
 #include "continuous_matrix.hpp"
+#include "general_defines.hpp"
 
-typedef continuous_matrix<double> dmatrix;
-typedef continuous_matrix<size_t> umatrix;
 
 namespace fs = std::experimental::filesystem;
-
-typedef cv::Vec3b vec3b;
-
-
-namespace rgb_pixel{
-    const vec3b black(0,0,0);
-    const vec3b white(255,255,255);
-};
-
-namespace gray_pixel{
-    const uint8_t black = 0;
-    const uint8_t white = 255;
-};
-
-struct bound{
-    const size_t _left;
-    const size_t _right;
-    bound(size_t left, size_t right):_left(left),_right(right){
-    }
-};
 
 
 class BayesianResult{
@@ -146,6 +121,16 @@ public:
                 if (m_pixel != rgb_pixel::white)
                     counts.increment(i_pixel[first],i_pixel[second]);
             }
+        }
+    };
+
+    template <uint first,uint second>
+    void train_from_image(const cv::Mat& image, const vec3b& ignore_color) {
+        auto i = image.begin<vec3b>(), end = image.end<vec3b>();
+        for (; i != end; i++) {
+            const vec3b& i_pixel = *i;
+            if (i_pixel != ignore_color)
+                counts.increment(i_pixel[first], i_pixel[second]);
         }
     };
 
