@@ -117,6 +117,10 @@ public:
         return _data;
     }
 
+    inline pointer data() const {
+        return _data;
+    }
+
     inline iterator begin() {
         return _data;
     }
@@ -145,7 +149,8 @@ public:
 
 };
 
-typedef continuous_matrix<double> dmatrix;
-typedef continuous_matrix<size_t> umatrix;
+typedef continuous_matrix<double>   dmatrix;
+typedef continuous_matrix<uint8_t>  umatrix;
+typedef continuous_matrix<size_t>   smatrix;
 
 #endif //CONTINUOUS_MATRIX_HPP

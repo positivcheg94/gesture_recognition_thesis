@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
     std::ofstream file(path_to_output_folder.string());
     bayesian_m.save_to_file(file);
-    bayesian_m.blur(5,1,1);
+    bayesian_m.gaussian_blur(5,5,1,1);
     cv::Mat color_map = bayesian_m.representation();
     cv::imwrite(path_to_output_folder.string() + ".jpg",color_map);
 
