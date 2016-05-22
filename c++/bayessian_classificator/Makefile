@@ -37,16 +37,16 @@ train_from_folder: $(OUTPUT) $(BIN)/train_from_folder.app
 
 train_from_realsense: $(OUTPUT) $(BIN)/train_from_realsense.app
 	echo "#! /bin/bash" > train_from_realsense
-	echo "$(BIN)/train_from_realsense.app $(FILENAME)" >> train_from_realsense
+	echo "$(BIN)/train_from_realsense.app $(OUTPUT)/\$$1" >> train_from_realsense
 
 process_opencv: $(OUTPUT) $(BIN)/process_opencv.app
 	echo "#! /bin/bash" > process_opencv
-	echo "$(BIN)/process_opencv.app $(OUTPUT) $(FILENAME) \$$1 \$$2" >> process_opencv
+	echo "$(BIN)/process_opencv.app $(OUTPUT)/$(FILENAME) \$$1 \$$2" >> process_opencv
 	chmod a+x process_opencv
 
 process_realsense: $(OUTPUT) $(BIN)/process_realsense.app
 	echo "#! /bin/bash" > process_realsense
-	echo "$(BIN)/process_realsense.app $(OUTPUT) $(FILENAME) \$$1 \$$2" >> process_realsense
+	echo "$(BIN)/process_realsense.app $(OUTPUT)/$(FILENAME) \$$1 \$$2" >> process_realsense
 	chmod a+x process_realsense
 
 

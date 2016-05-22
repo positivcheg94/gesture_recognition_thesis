@@ -55,16 +55,12 @@ void filter_color_image_by_depth(cv::Mat &color, cv::Mat &depth, uint16_t max_di
 }
 
 int main(int argc, char* argv[]) {
-    assert(argc>3);
+    assert(argc>2);
 
-    std::string output_folder = argv[1];
-    std::string filename = argv[2];
-    double treshold = std::stod(argv[3]);
+    std::string filepath = argv[1];
+    double treshold = std::stod(argv[2]);
 
-    fs::path path_to_file(output_folder);
-    path_to_file/=filename;
-
-    std::ifstream file(path_to_file.string());
+    std::ifstream file(filepath);
 
     BayesianModel b_m = std::move(BayesianModel::load_from_file(file));
 

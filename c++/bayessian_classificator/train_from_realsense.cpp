@@ -55,7 +55,7 @@ void filter_color_image_by_depth(cv::Mat &color, cv::Mat &depth, uint16_t max_di
 
 int main(int argc, char* argv[]) {
     assert(argc>1);
-    std::string file_name = argv[1];
+    std::string filepath = argv[1];
 
     cv::namedWindow(color_window, 1);
 
@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
 
         }
         auto b_model = b.model();
-        std::ofstream out(file_name);
+        std::ofstream out(filepath);
         b_model.save_to_file(out);
         dev->stop();
     }

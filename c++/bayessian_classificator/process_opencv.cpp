@@ -13,17 +13,14 @@ std::string color_window = "color";
 std::string classified_window = "color";
 
 int main(int argc, char* argv[]) {
-    assert(argc>4);
+    assert(argc>3);
 
-    std::string output_folder = argv[1];
-    std::string filename = argv[2];
-    size_t camera = std::stoll(argv[3]);
-    double treshold = std::stod(argv[4]);
+    std::string filepath = argv[1];
+    size_t camera = std::stoll(argv[2]);
+    double treshold = std::stod(argv[3]);
 
-    fs::path path_to_file(output_folder);
-    path_to_file/=filename;
 
-    std::ifstream file(path_to_file.string());
+    std::ifstream file(filepath);
 
     BayesianModel b_m = std::move(BayesianModel::load_from_file(file));
 
