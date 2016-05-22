@@ -18,9 +18,16 @@
 
 namespace fs = std::experimental::filesystem;
 
+class Bayesian;
+class BayesianModel;
+
+
+BayesianModel model_union(const BayesianModel& bm1, const BayesianModel& bm2);
+
 
 class BayesianModel{
     friend boost::serialization::access;
+    friend BayesianModel model_union(const BayesianModel& bm1, const BayesianModel& bm2);
 
     size_t first_dim;
     size_t second_dim;
@@ -123,7 +130,7 @@ class Bayesian{
     size_t first_dim;
     size_t second_dim;
     smatrix counts;
-    
+
     // used for serialization
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version){
@@ -188,6 +195,9 @@ public:
         return BayesianModel(first_dim, second_dim, counts);
     }
 };
+
+
+
 
 
 #endif

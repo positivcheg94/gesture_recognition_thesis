@@ -43,3 +43,16 @@ void Bayesian::save_to_file(std::ofstream &stream) {
     boost::archive::text_oarchive out_archive(stream);
     out_archive << *this;
 }
+
+template <class BinaryFunction>
+BayesianModel model_union(const BayesianModel& bm1, const BayesianModel& bm2, BinaryFunction func = std::max){
+    assert(bm1.first_dim==bm2.first_dim && bm1.second_dim == bm2.second_dim);
+    BayesianModel result(bm1.first_dim,bm1.second_dim);
+
+    auto bm1_b = bm1.probs.cbegin(),bm1_e = bm1.probs.cend();
+    auto bm2_b = bm2.probs.cbegin(), res_b = result.probs.begin();
+
+    for(;bm1_b!=bm1_e;++bm1_b,++bm2_b,++res_b)
+        *res_b == func(*bm1_b,*bm2_b);
+    return result;
+}
