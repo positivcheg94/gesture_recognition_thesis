@@ -24,6 +24,9 @@ int main(int argc, char* argv[]) {
 
     BayesianModel b_m = std::move(BayesianModel::load_from_file(file));
 
+    cv::imshow("repr",b_m.representation());
+    cv::imshow("gen repr",b_m.general_representation());
+
 
     cv::VideoCapture cap(camera);
     cap.set(CV_CAP_PROP_FPS, 30);

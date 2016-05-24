@@ -19,7 +19,7 @@ FILENAME := trained6.clr
 
 
 
-all: train_from_folder train_from_realsense process_opencv process_realsense
+all: train_from_folder train_from_realsense process_opencv process_realsense filter_model
 
 
 
@@ -37,53 +37,54 @@ train_from_folder: $(OUTPUT) $(BIN)/train_from_folder.app
 
 train_from_realsense: $(OUTPUT) $(BIN)/train_from_realsense.app
 	echo "#! /bin/bash" > train_from_realsense
-	echo "$(BIN)/train_from_realsense.app $(OUTPUT)/\$$1" >> train_from_realsense
+	echo "$(BIN)/train_from_realsense.app $(OUTPUT)/\$$1 \$$2" >> train_from_realsense
+	chmod a+x train_from_realsense
 
 process_opencv: $(OUTPUT) $(BIN)/process_opencv.app
 	echo "#! /bin/bash" > process_opencv
-	echo "$(BIN)/process_opencv.app $(OUTPUT)/$(FILENAME) \$$1 \$$2" >> process_opencv
+	echo "$(BIN)/process_opencv.app $(OUTPUT)/\$$1 \$$2 \$$3" >> process_opencv
 	chmod a+x process_opencv
 
 process_realsense: $(OUTPUT) $(BIN)/process_realsense.app
 	echo "#! /bin/bash" > process_realsense
-	echo "$(BIN)/process_realsense.app $(OUTPUT)/$(FILENAME) \$$1 \$$2" >> process_realsense
+	echo "$(BIN)/process_realsense.app $(OUTPUT)/\$$1 \$$2" >> process_realsense
 	chmod a+x process_realsense
+
+show_model_representation: $(OUTPUT) $(BIN)/show_model_representation.app
+	echo "#! /bin/bash" > show_model_representation
+	echo "$(BIN)/show_model_representation.app $(OUTPUT)/\$$1" >> show_model_representation
+	chmod a+x show_model_representation
+
+filter_model: $(OUTPUT) $(BIN)/filter_model.app
+	echo "#! /bin/bash" > filter_model
+	echo "$(BIN)/filter_model.app $(OUTPUT)/\$$1 $(OUTPUT)/\$$2 \$$3 \$$4 \$$5 \$$6 \$$7" >> filter_model
+	chmod a+x filter_model
 
 
 
 # executables
-$(BIN)/train_from_folder.app: $(BIN) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/train_from_folder.o
-	$(GCC) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/train_from_folder.o $(STD) $(BOOST) $(OPENCV) -o $@
+$(BIN)/train_from_folder.app: $(BIN) $(OBJ)/classificator.o
+	$(GCC) train_from_folder.cpp $(OBJ)/classificator.o $(STD) $(BOOST) $(OPENCV) -o $@
 
-$(BIN)/train_from_realsense.app: $(BIN) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/train_from_realsense.o
-	$(GCC) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/train_from_realsense.o $(STD) $(BOOST) $(OPENCV) $(REALSENSE) -o $@
+$(BIN)/train_from_realsense.app: $(BIN) $(OBJ)/classificator.o
+	$(GCC) train_from_realsense.cpp $(OBJ)/classificator.o  $(STD) $(BOOST) $(OPENCV) $(REALSENSE) -o $@
 
-$(BIN)/process_opencv.app: $(BIN) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/process_opencv.o
-	$(GCC) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/process_opencv.o $(STD) $(BOOST) $(OPENCV) -o $@
+$(BIN)/process_opencv.app: $(BIN) $(OBJ)/classificator.o
+	$(GCC) process_opencv.cpp $(OBJ)/classificator.o $(STD) $(BOOST) $(OPENCV) -o $@
 
-$(BIN)/process_realsense.app: $(BIN) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/process_realsense.o
-	$(GCC) $(OBJ)/continuous_matrix.o $(OBJ)/classificator.o $(OBJ)/process_realsense.o $(STD) $(BOOST) $(OPENCV) $(REALSENSE)  -o $@
+$(BIN)/process_realsense.app: $(BIN) $(OBJ)/classificator.o
+	$(GCC) process_realsense.cpp $(OBJ)/classificator.o $(STD) $(BOOST) $(OPENCV) $(REALSENSE)  -o $@
 
+$(BIN)/show_model_representation.app: $(BIN) $(OBJ)/classificator.o
+	$(GCC) show_model_representation.cpp $(OBJ)/classificator.o $(STD) $(BOOST) $(OPENCV) $(REALSENSE)  -o $@
 
+$(BIN)/filter_model.app: $(BIN) $(OBJ)/classificator.o
+	$(GCC) filter_model.cpp $(OBJ)/classificator.o $(STD) $(BOOST) $(OPENCV) $(REALSENSE)  -o $@
 
 # objects
-$(OBJ)/train_from_realsense.o: train_from_realsense.cpp
-	$(GCC) -c train_from_realsense.cpp -o $@
-
-$(OBJ)/train_from_folder.o: $(OBJ) train_from_folder.cpp
-	$(GCC) -c train_from_folder.cpp -o $@
-
-$(OBJ)/process_opencv.o: $(OBJ) process_opencv.cpp
-	$(GCC) -c process_opencv.cpp -o $@
-
-$(OBJ)/process_realsense.o: $(OBJ) process_realsense.cpp
-	$(GCC) -c process_realsense.cpp -o $@
-
 $(OBJ)/classificator.o: $(OBJ) classificator.cpp
 	$(GCC) -c classificator.cpp -o $@
 
-$(OBJ)/continuous_matrix.o: $(OBJ) continuous_matrix.cpp
-	$(GCC) -c continuous_matrix.cpp -o $@
 
 $(OBJ):
 	mkdir -p $(OBJ)

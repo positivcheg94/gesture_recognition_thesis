@@ -1,0 +1,2 @@
+#! /bin/bash
+./bin/show_model_representation.app ./data/$1

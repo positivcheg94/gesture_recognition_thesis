@@ -58,11 +58,16 @@ int main(int argc, char* argv[]) {
     assert(argc>2);
 
     std::string filepath = argv[1];
+    std::cout << argv[2];
     double treshold = std::stod(argv[2]);
 
     std::ifstream file(filepath);
 
     BayesianModel b_m = std::move(BayesianModel::load_from_file(file));
+
+    cv::imshow("repr",b_m.representation());
+    cv::imshow("gen repr",b_m.general_representation());
+
 
     cv::namedWindow(color_window, 1);
     cv::namedWindow(classified_window, 1);
@@ -80,13 +85,6 @@ int main(int argc, char* argv[]) {
 
         dev = ctx.get_device(0);
 
-        dev->set_option(rs::option::f200_laser_power, 15);
-        dev->set_option(rs::option::f200_motion_range, 50);
-        dev->set_option(rs::option::f200_confidence_threshold, 15);
-        dev->set_option(rs::option::f200_filter_option, 6);
-        dev->set_option(rs::option::f200_accuracy, 3);
-
-        dev->enable_stream(rs::stream::depth, width, height, rs::format::z16, 30);
         dev->enable_stream(rs::stream::color, width, height, rs::format::bgr8, 30);
         dev->start();
 
@@ -100,7 +98,7 @@ int main(int argc, char* argv[]) {
             std::chrono::duration<double> duration;
             std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
-            color_frame = cv::Mat(height, width, CV_8UC3, const_cast<void *>(dev->get_frame_data(rs::stream::color_aligned_to_depth)));
+            color_frame = cv::Mat(height, width, CV_8UC3, const_cast<void *>(dev->get_frame_data(rs::stream::color)));
 #ifdef DEBUG
             duration = std::chrono::system_clock::now() - start;
             std::cout << "time elapsed for getting frames " << duration.count() << std::endl;

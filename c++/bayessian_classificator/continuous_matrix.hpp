@@ -24,7 +24,7 @@ class continuous_matrix {
     typedef S size_type;
 
     typedef pointer iterator;
-    typedef const pointer const_iterator;
+    typedef const_pointer const_iterator;
 
     size_type _rows;
     size_type _cols;
@@ -88,6 +88,10 @@ public:
         return _data[row * _cols + col];
     }
 
+    inline const_reference operator()(size_type row, size_type col) const{
+        return _data[row * _cols + col];
+    }
+
     inline reference get(size_type row, size_type col) const {
         return _data[row * _cols + col];
     }
@@ -105,11 +109,11 @@ public:
             delete[] _data;
     }
 
-    inline size_type rows(){
+    inline size_type rows() const{
         return _rows;
     }
 
-    inline size_type cols(){
+    inline size_type cols() const{
         return _cols;
     }
 
@@ -149,8 +153,10 @@ public:
 
 };
 
-typedef continuous_matrix<double>   dmatrix;
+typedef continuous_matrix<bool>     bmatrix;
 typedef continuous_matrix<uint8_t>  umatrix;
 typedef continuous_matrix<size_t>   smatrix;
+typedef continuous_matrix<double>   dmatrix;
+
 
 #endif //CONTINUOUS_MATRIX_HPP

@@ -54,8 +54,9 @@ void filter_color_image_by_depth(cv::Mat &color, cv::Mat &depth, uint16_t max_di
 }
 
 int main(int argc, char* argv[]) {
-    assert(argc>1);
+    assert(argc>2);
     std::string filepath = argv[1];
+    size_t distance = std::stoull(argv[2]);
 
     cv::namedWindow(color_window, 1);
 
@@ -101,15 +102,17 @@ int main(int argc, char* argv[]) {
             std::cout << "time elapsed for getting frames " << duration.count() << std::endl;
             start = std::chrono::system_clock::now();
 #endif
-//            cv::erode(depth_frame, depth_frame, struct_element);
-//            cv::dilate(depth_frame, depth_frame, struct_element);
+            cv::blur(color_frame,color_frame,cv::Size(3,3));
+
+            cv::erode(depth_frame, depth_frame, struct_element);
+            //cv::dilate(depth_frame, depth_frame, struct_element);
 
 #ifdef DIST_DEBUG
             auto minmax = find_min_max(depth_frame);
                 std::cout << "min=" << minmax.first << " | max=" << minmax.second << std::endl;
 #endif
 
-            filter_color_image_by_depth(color_frame, depth_frame, 20000);
+            filter_color_image_by_depth(color_frame, depth_frame, distance);
 
 
 #ifdef DEBUG

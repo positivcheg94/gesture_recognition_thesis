@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <fstream>
+#include <queue>
 
 #include <experimental/filesystem>
 
@@ -17,6 +18,8 @@
 
 
 namespace fs = std::experimental::filesystem;
+
+spoint push_wave(const dmatrix& probs, bmatrix& visited, dmatrix& out, spoint start);
 
 class Bayesian;
 class BayesianModel;
@@ -47,11 +50,14 @@ public:
     static BayesianModel load_from_file(std::ifstream & stream);
 
     BayesianModel(BayesianModel&&) = default;
-    BayesianModel(const size_t first,const size_t second, const smatrix& counts);
+    BayesianModel(const smatrix& counts);
+    BayesianModel(dmatrix&& prob_in);
 
     void save_to_file(std::ofstream &stream);
 
     cv::Mat representation();
+
+    cv::Mat general_representation();
 
     /*
      *
@@ -71,18 +77,35 @@ public:
         return out;
     };
 
-    void threshold_low_probabilities(double threshold, size_t size){
-        cv::Mat process(first_dim,second_dim,CV_64F,probs.data());
+    void normalize_probabilities(){
+        auto coef = 1.0 / *std::max_element(probs.cbegin(),probs.cend());
+        auto curr = probs.begin(), last = probs.end();
+        for(; curr!=last; curr++)
+            *curr*=coef;
+    }
 
-        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(size,size));
-        kernel/= cv::countNonZero(kernel);
+    void threshold_small_probabilities_blobs(uint8_t size, uint8_t part){
+        double area_lower_bound_size = double(part)/255;
 
-        cv::filter2D(process,process,-1,kernel);
+        // prepare main double matrix and mask uint8_t matrix
+        cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
+        continuous_matrix<double> cmm(first_dim,second_dim);
+        auto p_b = probs.cbegin(),p_e = probs.cend();
+        auto cmm_b = cmm.begin();
+        for(;p_b!=p_e;++p_b,++cmm_b) {
+            if (*p_b > 0) {
+                *cmm_b = 1.0;
+            }
+        }
 
-        auto current = probs.begin(), last = probs.end();
-        for(; current!=last; ++current)
-            if (*current < threshold)
-                *current = 0;
+        auto res = std::pair<double,double>();
+        cv::Mat mask(first_dim,second_dim,CV_64FC1,cmm.data());
+
+        cv::blur(mask,mask,cv::Size(size,size));
+
+        cv::inRange(mask,0,area_lower_bound_size,mask);
+
+        process.setTo(.0,mask);
     }
 
     /*
@@ -92,35 +115,73 @@ public:
      * adequate tip is to use percents not less than 0.25 ( 1/4 of the circle ) because 0.5 may erase
      * edge probilities of big probabilities blobs
      */
-    void filter_random_probabilities(uint8_t size, double percents){
+    void filter_random_probabilities(uint8_t size, uint8_t lower_bound){
 
         //prepare kernel and area sizes
         cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(size,size));
-        size_t area_size = cv::countNonZero(kernel);
-        size_t area_lower_bound_size = area_size*percents;
 
         // prepare main double matrix and mask uint8_t matrix
-        cv::Mat process(first_dim,second_dim,CV_64F,probs.data());
-        continuous_matrix<uint8_t> cmm(first_dim,second_dim);
-        auto p_b = probs.cbegin(),p_e = probs.cend();
-        auto cmm_b = cmm.begin();
-        for(;p_b!=p_e;++p_b,++cmm_b)
-            if(*p_b>0)
-                *cmm_b = 1;
+        cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
 
-        cv::Mat mask(first_dim,second_dim,CV_8U,cmm.data());
+        cv::Mat mask = std::move(representation());
         cv::filter2D(mask,mask,-1,kernel);
+        cv::inRange(mask,0,lower_bound,mask);
 
-        process.copyTo(process,mask);
+
+        process.setTo(.0,mask);
     }
 
-    void median_blur(){
-
+    void erode(uint8_t a,uint8_t b){
+        cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(a,b));
+        cv::erode(process,process,kernel);
     }
 
-    void gaussian_blur(size_t ksize_width ,size_t ksize_height , double sigmax, double sigmay){
-        cv::Mat process(first_dim,second_dim,CV_64F,probs.data());
-        cv::GaussianBlur(process,process,cv::Size(ksize_width,ksize_height),sigmax,sigmay);
+    void dilate(uint8_t a,uint8_t b){
+        cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(a,b));
+        cv::dilate(process,process,kernel);
+    }
+
+    void blur(uint8_t a,uint8_t b){
+        cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
+        cv::blur(process,process,cv::Size(a,b));
+    }
+
+    void gaussian_blur(size_t a ,size_t b , double sigmax, double sigmay){
+        cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
+        cv::GaussianBlur(process,process,cv::Size(a,b),sigmax,sigmay);
+    }
+
+    std::vector<BayesianModel> decomposition(double min_area, double min_distance){
+        auto params = cv::SimpleBlobDetector::Params();
+        params.minDistBetweenBlobs = min_distance;
+        params.filterByInertia = false;
+        params.filterByConvexity = false;
+        params.filterByColor = false;
+        params.filterByCircularity = false;
+        params.filterByArea = true;
+        params.minArea = min_area;
+        params.maxArea = std::numeric_limits<double>::max();
+        auto blob_detector = cv::SimpleBlobDetector::create(params);
+
+        auto gen_repr = std::move(this->general_representation());
+
+        std::vector< cv::KeyPoint > keypoints;
+        blob_detector->detect(gen_repr,keypoints);
+
+        std::vector<BayesianModel> result;
+        result.reserve(keypoints.size());
+
+        bmatrix visited(first_dim,second_dim);
+
+        for(auto & keypoint : keypoints){
+            auto x = keypoint.pt.x,y=keypoint.pt.y;
+            dmatrix probs_blob(first_dim,second_dim);
+            push_wave(probs,visited,probs_blob,spoint(x,y));
+            result.push_back(std::move(BayesianModel(std::move(probs_blob))));
+        }
+
     }
 };
 
@@ -192,7 +253,7 @@ public:
     };
 
     BayesianModel model() const {
-        return BayesianModel(first_dim, second_dim, counts);
+        return BayesianModel(counts);
     }
 };
 
