@@ -64,8 +64,11 @@ public:
 
     continuous_matrix() : _data(nullptr), _rows(0), _cols(0), _total(0) { }
 
-    continuous_matrix(size_type rows, size_type cols) : _rows(rows), _cols(cols), _total(rows * cols) {
+    continuous_matrix(size_type rows, size_type cols, value_type value = 0) : _rows(rows), _cols(cols), _total(rows * cols) {
         _data = new value_type[_total];
+        std::fill(begin(), end(),value);
+        for(auto c = begin(); c!=end(); c++)
+            assert(*c == value);
     }
 
     continuous_matrix(size_type rows, size_type cols, const_pointer data) : _rows(rows), _cols(cols), _total(rows * cols) {
@@ -78,7 +81,16 @@ public:
         std::memcpy(_data, matrix._data, _total * sizeof(value_type));
     }
 
-    continuous_matrix(continuous_matrix && matrix) : _rows(matrix._rows), _cols(matrix._cols), _total(matrix._rows * matrix._cols) {
+    continuous_matrix(continuous_matrix && matrix) : _rows(matrix._rows), _cols(matrix._cols), _total(matrix._total) {
+        _data = matrix._data;
+        matrix._rows = matrix._cols = matrix._total = 0;
+        matrix._data = nullptr;
+    }
+
+    continuous_matrix& operator=(continuous_matrix&& matrix){
+        _rows = matrix._rows;
+        _cols = matrix._cols;
+        _total = matrix._total;
         _data = matrix._data;
         matrix._rows = matrix._cols = matrix._total = 0;
         matrix._data = nullptr;
@@ -148,6 +160,14 @@ public:
         if ( _data != nullptr )
             delete[] _data;
         _data = new value_type[_total];
+    }
+
+    size_type count_non_zero(){
+        size_type non_zero = 0;
+        for(auto c = begin(); c!=end(); c++)
+            if(*c != 0)
+                non_zero++;
+        return non_zero;
     }
 
 

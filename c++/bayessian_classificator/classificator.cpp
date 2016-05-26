@@ -7,31 +7,49 @@ spoint push_wave(const dmatrix& probs, bmatrix& visited, dmatrix& out, spoint st
     curr_q.push(start);
     spoint max_prob = start;
     double max_prob_value = probs(start.x, start.y);
+    visited(start.x, start.y) = true;
     while (!curr_q.empty()) {
         spoint current_point = std::move(curr_q.front());
         curr_q.pop();
         auto& x = current_point.x, y = current_point.y;
-        visited(x, y) = true;
 
         auto prob = probs(x,y);
         out(x, y) = prob;
 
-        if (x > 1 && !visited(x - 1, y) && probs(x - 1, y) > 0)
+        if (x > 1 && !visited(x - 1, y) && probs(x - 1, y) > 0) {
             curr_q.push(std::move(spoint(x - 1, y)));
-        if (x < width && !visited(x + 1, y) && probs(x + 1, y) > 0)
+            visited(x - 1, y) = true;
+        }
+        if (x < width && !visited(x + 1, y) && probs(x + 1, y) > 0) {
             curr_q.push(std::move(spoint(x + 1, y)));
-        if (y > 1 && !visited(x, y - 1) && probs(x, y - 1) > 0)
+            visited(x + 1, y) = true;
+        }
+        if (y > 1 && !visited(x, y - 1) && probs(x, y - 1) > 0) {
             curr_q.push(std::move(spoint(x, y - 1)));
-        if (y < height && !visited(x, y + 1) && probs(x, y + 1) > 0)
+            visited(x, y - 1) = true;
+        }
+        if (y < height && !visited(x, y + 1) && probs(x, y + 1) > 0) {
             curr_q.push(std::move(spoint(x, y + 1)));
+            visited(x, y + 1) = true;
+        }
 
-        if (prob > max_prob_value)
+        if (prob > max_prob_value) {
+            max_prob_value = prob;
             max_prob = std::move(current_point);
+        }
     }
     return max_prob;
 }
 
 BayesianModel BayesianModel::load_from_file(std::ifstream &stream) {
+    boost::archive::text_iarchive in_archive(stream);
+    BayesianModel b_m;
+    in_archive >> b_m;
+    return b_m;
+}
+
+BayesianModel BayesianModel::load_from_file(const std::string& path) {
+    std::ifstream stream(path);
     boost::archive::text_iarchive in_archive(stream);
     BayesianModel b_m;
     in_archive >> b_m;
@@ -47,9 +65,21 @@ BayesianModel::BayesianModel(const smatrix& counts) : first_dim(counts.rows()), 
             probs(i,j) = counts.get(i,j) * multiplier;
 }
 
-BayesianModel::BayesianModel(dmatrix&& prob_in) : first_dim(prob_in.rows()), second_dim(prob_in.cols()), probs(prob_in) { }
+BayesianModel::BayesianModel(BayesianModel&& model) : first_dim(model.first_dim), second_dim(model.second_dim){
+    std::swap(probs,model.probs);
+}
+
+BayesianModel::BayesianModel(dmatrix&& probs_in) : first_dim(probs_in.rows()), second_dim(probs_in.cols()){
+    probs = std::move(probs_in);
+}
 
 void BayesianModel::save_to_file(std::ofstream &stream) {
+    boost::archive::text_oarchive out_archive(stream);
+    out_archive << *this;
+}
+
+void BayesianModel::save_to_file(const std::string& path) {
+    std::ofstream stream(path);
     boost::archive::text_oarchive out_archive(stream);
     out_archive << *this;
 }
@@ -79,7 +109,21 @@ Bayesian Bayesian::load_from_file(std::ifstream &stream) {
     return b;
 }
 
+Bayesian Bayesian::load_from_file(const std::string& path) {
+    std::ifstream stream(path);
+    boost::archive::text_iarchive in_archive(stream);
+    Bayesian b;
+    in_archive >> b;
+    return b;
+}
+
 void Bayesian::save_to_file(std::ofstream &stream) {
+    boost::archive::text_oarchive out_archive(stream);
+    out_archive << *this;
+}
+
+void Bayesian::save_to_file(const std::string& path) {
+    std::ofstream stream(path);
     boost::archive::text_oarchive out_archive(stream);
     out_archive << *this;
 }

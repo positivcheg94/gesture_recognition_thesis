@@ -14,9 +14,8 @@ int main(int argc, char* argv[]){
     for(size_t i = 4; i < argc; ++i)
         params.push_back(std::string(argv[i]));
 
-    std::ifstream in_file(in_filepath);
-    BayesianModel b_m = std::move(BayesianModel::load_from_file(in_file));
-    in_file.close();
+    BayesianModel b_m = std::move(BayesianModel::load_from_file(in_filepath));
+
     cv::imshow("before repr", b_m.representation());
     cv::imshow("before gen_repr", b_m.general_representation());
 
@@ -41,9 +40,13 @@ int main(int argc, char* argv[]){
     else if(command == "gblur") {
         b_m.gaussian_blur(std::stoull(params[0]),std::stoull(params[1]),std::stod(params[2]),std::stod(params[3]));
     }
+    else if(command == "dec") {
+        auto result = b_m.decomposition(std::stod(params[0]),std::stod(params[1]));
+        for (size_t i = 0; i < result.size(); ++i)
+            result[i].save_to_file(out_filepath+std::to_string(i));
+    }
 
-    std::ofstream out_file(out_filepath);
-    b_m.save_to_file(out_file);
+    b_m.save_to_file(out_filepath);
 
     cv::imshow("after repr", b_m.representation());
     cv::imshow("after gen_repr", b_m.general_representation());

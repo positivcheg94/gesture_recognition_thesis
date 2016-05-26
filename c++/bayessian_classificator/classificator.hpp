@@ -48,12 +48,14 @@ class BayesianModel{
 public:
 
     static BayesianModel load_from_file(std::ifstream & stream);
+    static BayesianModel load_from_file(const std::string& path);
 
-    BayesianModel(BayesianModel&&) = default;
+    BayesianModel(BayesianModel&&);
     BayesianModel(const smatrix& counts);
     BayesianModel(dmatrix&& prob_in);
 
     void save_to_file(std::ofstream &stream);
+    void save_to_file(const std::string& path);
 
     cv::Mat representation();
 
@@ -170,18 +172,30 @@ public:
         std::vector< cv::KeyPoint > keypoints;
         blob_detector->detect(gen_repr,keypoints);
 
+        cv::drawKeypoints(gen_repr,keypoints,gen_repr,cv::Scalar::all(-1),cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        cv::imshow("LALALA", gen_repr);
+
         std::vector<BayesianModel> result;
         result.reserve(keypoints.size());
 
         bmatrix visited(first_dim,second_dim);
 
+        std::cout << keypoints.size() << std::endl;
+
         for(auto & keypoint : keypoints){
             auto x = keypoint.pt.x,y=keypoint.pt.y;
             dmatrix probs_blob(first_dim,second_dim);
-            push_wave(probs,visited,probs_blob,spoint(x,y));
-            result.push_back(std::move(BayesianModel(std::move(probs_blob))));
+            push_wave(probs,visited,probs_blob,spoint(y,x));
+            auto current_model = BayesianModel(std::move(probs_blob));
+            result.push_back(std::move(current_model));
         }
+        //for (auto & elem : result)
+        //    elem.normalize_probabilities();
+        return result;
+    }
 
+    size_t non_zero(){
+        return probs.count_non_zero();
     }
 };
 
@@ -204,11 +218,13 @@ class Bayesian{
 public:
 
     static Bayesian load_from_file(std::ifstream & stream);
+    static Bayesian load_from_file(const std::string& path);
 
     Bayesian(Bayesian&&) = default;
     Bayesian(const size_t first, const size_t second) : first_dim(first), second_dim(second), counts(first,second) {};
 
     void save_to_file(std::ofstream & stream);
+    void save_to_file(const std::string& path);
 
     template <uint first,uint second>
     void train_from_folder(const fs::path &path, uchar color_space_conversion = cv::COLOR_BGR2HSV) {

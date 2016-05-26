@@ -96,4 +96,4 @@ $(OUTPUT):
 	mkdir -p $(OUTPUT)
 
 clean:
-	rm -r -f $(OBJ) $(BIN) train_from_folder train_from_realsense process_opencv process_realsense
+	rm -r -f $(OBJ) $(BIN) train_from_folder train_from_realsense process_opencv process_realsense show_model_representation filter_model
