@@ -86,26 +86,12 @@ public:
             *curr*=coef;
     }
 
-    void threshold_small_probabilities_blobs(uint8_t size, uint8_t part){
-        double area_lower_bound_size = double(part)/255;
-
-        // prepare main double matrix and mask uint8_t matrix
+    void threshold_small_probabilities_blobs(uint8_t size, double prob_threshold){
         cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
-        continuous_matrix<double> cmm(first_dim,second_dim);
-        auto p_b = probs.cbegin(),p_e = probs.cend();
-        auto cmm_b = cmm.begin();
-        for(;p_b!=p_e;++p_b,++cmm_b) {
-            if (*p_b > 0) {
-                *cmm_b = 1.0;
-            }
-        }
+        cv::Mat mask;
 
-        auto res = std::pair<double,double>();
-        cv::Mat mask(first_dim,second_dim,CV_64FC1,cmm.data());
-
-        cv::blur(mask,mask,cv::Size(size,size));
-
-        cv::inRange(mask,0,area_lower_bound_size,mask);
+        cv::blur(process,mask,cv::Size(size,size));
+        cv::inRange(mask,0,prob_threshold,mask);
 
         process.setTo(.0,mask);
     }
@@ -117,18 +103,26 @@ public:
      * adequate tip is to use percents not less than 0.25 ( 1/4 of the circle ) because 0.5 may erase
      * edge probilities of big probabilities blobs
      */
-    void filter_random_probabilities(uint8_t size, uint8_t lower_bound){
-
-        //prepare kernel and area sizes
+    void filter_random_probabilities(uint8_t size, double part){
+        if (size > 16) {
+            std::cerr << "filter_random_probabilities: size > 16" << std::endl;
+            return;
+        }
         cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(size,size));
-
-        // prepare main double matrix and mask uint8_t matrix
         cv::Mat process(first_dim,second_dim,CV_64FC1,probs.data());
+        uint8_t lower_bound = cv::countNonZero(kernel) * part;
 
-        cv::Mat mask = std::move(representation());
+        continuous_matrix<uint8_t> cmm(first_dim,second_dim);
+        auto p_b = probs.cbegin(),p_e = probs.cend();
+        auto cmm_b = cmm.begin();
+        for(;p_b!=p_e;++p_b,++cmm_b) {
+            if (*p_b > 0) {
+                *cmm_b = 1;
+            }
+        }
+        cv::Mat mask(first_dim,second_dim,CV_8U,cmm.data());
         cv::filter2D(mask,mask,-1,kernel);
         cv::inRange(mask,0,lower_bound,mask);
-
 
         process.setTo(.0,mask);
     }

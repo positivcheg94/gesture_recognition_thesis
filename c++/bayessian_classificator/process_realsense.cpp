@@ -12,6 +12,7 @@ std::string classified_window = "color";
 
 auto struct_element = cv::getStructuringElement(cv::MorphShapes::MORPH_RECT, cv::Size(4, 4));
 
+size_t n = 0;
 
 // in : cv::Mat of uint16_t
 std::pair<double, double> find_min_max(cv::Mat in, bool ignoreZero = true) {
@@ -91,6 +92,7 @@ int main(int argc, char* argv[]) {
         cv::Mat color_frame;
         cv::Mat hsv_frame;
         cv::Mat classified_frame;
+        cv::Mat kernel = cv::getStructuringElement(CV_SHAPE_ELLIPSE,cv::Size(5,5));
 
         while (true) {
             dev->wait_for_frames();
@@ -107,6 +109,8 @@ int main(int argc, char* argv[]) {
 
             cv::cvtColor(color_frame,hsv_frame,cv::COLOR_BGR2HSV);
             classified_frame = std::move(b_m.classify<0,1>(hsv_frame,treshold));
+            cv::dilate(classified_frame,classified_frame,kernel);
+            cv::erode(classified_frame,classified_frame,kernel);
 
 #ifdef DEBUG
             duration = std::chrono::system_clock::now() - start;
@@ -121,9 +125,11 @@ int main(int argc, char* argv[]) {
             int key = cv::waitKey(30) & 0xFF;
             if (key == 27)
                 break;
-            else if (key != 255)
-                std::cout << key << std::endl;
-
+            else if (key == 32) {
+                ++n;
+                cv::imwrite("color" + std::to_string(n) + ".png", color_frame);
+                cv::imwrite("mask" + std::to_string(n) + ".png", classified_frame);
+            }
         }
         dev->stop();
     }

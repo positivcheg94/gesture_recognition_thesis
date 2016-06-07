@@ -23,10 +23,10 @@ int main(int argc, char* argv[]){
         b_m.normalize_probabilities();
     }
     else if(command == "threshold"){
-        b_m.threshold_small_probabilities_blobs(std::stoull(params[0]),std::stoull(params[1]));
+        b_m.threshold_small_probabilities_blobs(std::stoull(params[0]),std::stod(params[1]));
     }
     else if(command == "filter"){
-        b_m.filter_random_probabilities(std::stoull(params[0]),std::stoull(params[1]));
+        b_m.filter_random_probabilities(std::stoull(params[0]),std::stod(params[1]));
     }
     else if(command == "erode"){
         b_m.erode(std::stoull(params[0]),std::stoull(params[1]));

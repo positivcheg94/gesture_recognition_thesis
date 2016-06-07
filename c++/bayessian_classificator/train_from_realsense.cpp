@@ -122,16 +122,15 @@ int main(int argc, char* argv[]) {
 
             cv::imshow(color_window, color_frame);
 
-            cv::cvtColor(color_frame,hsv_frame,cv::COLOR_BGR2HSV);
-
-            b.train_from_image<0,1>(hsv_frame,hsv_pixel::black);
 
             // i'm rly mad cuz this function returns every run different codes just wtf O_O
             int key = cv::waitKey(30) & 0xFF;
             if (key == 27)
                 break;
-            else if (key != 255)
-                std::cout << key << std::endl;
+            else if (key == 32){
+                cv::cvtColor(color_frame,hsv_frame,cv::COLOR_BGR2HSV);
+                b.train_from_image<0,1>(hsv_frame,hsv_pixel::black);
+            }
 
         }
         auto b_model = b.model();
