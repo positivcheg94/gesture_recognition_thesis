@@ -15,10 +15,6 @@ rs::device *dev = nullptr;
 const uint16_t height = 480;
 const uint16_t width = 640;
 
-std::string depth_window = "depth";
-std::string filtered_depth_window = "filtered_depth";
-std::string color_window = "color";
-
 auto struct_element = cv::getStructuringElement(cv::MorphShapes::MORPH_RECT, cv::Size(4, 4));
 
 namespace options {
@@ -53,7 +49,7 @@ std::pair<double, double> find_min_max(cv::Mat in, bool ignoreZero = true) {
                     min = elem;
             }
         // if all elements were ignored ( all zeros )
-        if (min == std::numeric_limits<double>::max() && max == std::numeric_limits<double>::min()){
+        if (min == std::numeric_limits<double>::max() && max == std::numeric_limits<double>::min()) {
             min = 0;
             max = 0;
         }
@@ -82,8 +78,6 @@ void filter_color_image_by_depth(cv::Mat &color, cv::Mat &depth, uint16_t max_di
 }
 
 int main() {
-    cv::namedWindow(depth_window, 1);
-    cv::namedWindow(color_window, 1);
 
     option_window::create();
 
@@ -110,6 +104,9 @@ int main() {
 
         cv::Mat depth_frame;
         cv::Mat color_frame;
+        cv::Mat color_frame_filtered;
+
+        size_t n = 0;
 
         while (true) {
             dev->wait_for_frames();
@@ -118,7 +115,9 @@ int main() {
             std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
             depth_frame = cv::Mat(height, width, CV_16UC1, const_cast<void *>(dev->get_frame_data(rs::stream::depth)));
-            color_frame = cv::Mat(height, width, CV_8UC3, const_cast<void *>(dev->get_frame_data(rs::stream::color_aligned_to_depth)));
+            color_frame_filtered = cv::Mat(height, width, CV_8UC3,
+                                  const_cast<void *>(dev->get_frame_data(rs::stream::color_aligned_to_depth)));
+            color_frame_filtered.copyTo(color_frame);
 #ifdef DEBUG
             duration = std::chrono::system_clock::now() - start;
             std::cout << "time elapsed for getting frames " << duration.count() << std::endl;
@@ -132,7 +131,7 @@ int main() {
                 std::cout << "min=" << minmax.first << " | max=" << minmax.second << std::endl;
 #endif
 
-            filter_color_image_by_depth(color_frame, depth_frame, options::current_distance);
+            filter_color_image_by_depth(color_frame_filtered, depth_frame, options::current_distance);
 
 
 #ifdef DEBUG
@@ -140,24 +139,27 @@ int main() {
             std::cout << "time elapsed for image processing frames " << duration.count() << std::endl;
 #endif
 
-            cv::imshow(depth_window, depth_frame);
-            cv::imshow(color_window, color_frame);
-
+            cv::imshow("depth", depth_frame);
+            cv::imshow("color", color_frame);
+            cv::imshow("filtered", color_frame_filtered);
 
             // i'm rly mad cuz this function returns every run different codes just wtf O_O
             int key = cv::waitKey(30) & 0xFF;
             if (key == 27)
                 break;
-            else if (key != 255)
-                std::cout << key << std::endl;
-
+            else if (key == 32) {
+                ++n;
+                cv::imwrite("color" + std::to_string(n) + ".png", color_frame);
+                cv::imwrite("filtered" + std::to_string(n) + ".png", color_frame_filtered);
+                cv::imwrite("depth" + std::to_string(n) + ".png", depth_frame);
+            }
         }
 
-        dev->stop();
     }
     catch (rs::error error) {
         std::cout << error.what() << std::endl;
         return -1;
     }
+    dev->stop();
     return 0;
 }
